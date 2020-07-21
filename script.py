@@ -11,32 +11,35 @@ username = "REPLACE_ME_QUALYS_USERNAME"
 password = "REPLACE_ME_QUALYS_PASSWORD"
 BASEURL = "REPLACE_ME_BASE_URL"
 pageNum = 0
-completeList = True
+notCompleteList = True
 
-while completeList:
-
-    accountList = 'curl -k -s -u {}:{} -H "X-Requested-With:Curl" -H "Accept: application/json" -X "GET"  "{}/cloudview-api/rest/v1/aws/connectors?pageNo={}&pageSize=50"'.format(username, password,BASEURL, str(pageNum))
+while notCompleteList:
+    accountList = 'curl -k -s -u {}:{} -H "X-Requested-With:Curl" -H "Accept: application/json" -X "GET"  "{}/cloudview-api/rest/v1/aws/connectors?pageNo={}&pageSize=50"'.format(username,password,BASEURL,str(pageNum))
     accountQuery = os.popen(accountList).read()
     #print accountQuery
     response = json.loads(accountQuery)
     accountListContent = response['content']
     for account in accountListContent:
-        kurl = 'curl -k -s -u {}:{} -H "X-Requested-With:Curl" -H "Accept: application/json" -X "GET"  "{}/cloudview-api/rest/v1/aws/evaluations/{}"'.format(username, password,BASEURL,account["awsAccountId"])
+        kurl = 'curl -k -s -u {}:{} -H "X-Requested-With:Curl" -H "Accept: application/json" -X "GET"  "{}/cloudview-api/rest/v1/aws/evaluations/{}"'.format(username, password,BASEURL,str(account["awsAccountId"]))
         eval = os.popen(kurl).read()
         evalcontent = json.loads(eval)['content']
-
-        for i in  range (len(evalcontent)):
-            cid = int(evalcontent[i]["controlId"])
-            qurl = 'curl -k -s -u {}:{} -H "X-Requested-With:Curl" -H "Accept: application/json" -X "GET"  "{}/cloudview-api/rest/v1/aws/evaluations/{}/resources/{}"'.format(username, password,BASEURL,account["awsAccountId"],cid)
-            result = os.popen(qurl).read()
-            resourceevaluation = json.loads(result)
-            count = len(resourceevaluation['content'])
-            for j in range(count):
-                    resourcecontent = resourceevaluation['content'][j]
-                    resourcecontent["controlName"] = evalcontent[i]["controlName"]
-                    resourcecontent["controlId"] = evalcontent[i]["controlId"]
-                    print ((json.dumps(resourcecontent)))
+        try:
+            for i in  range (len(evalcontent)):
+                cid = int(evalcontent[i]["controlId"])
+                remediationURL = str(BASEURL) + "/cloudview/controls/cid-" + str(evalcontent[i]["controlId"]) + ".html"
+                qurl = 'curl -k -s -u {}:{} -H "X-Requested-With:Curl" -H "Accept: application/json" -X "GET"  "{}/cloudview-api/rest/v1/aws/evaluations/{}/resources/{}"'.format(username, password,BASEURL,str(account["awsAccountId"]),cid)
+                result = os.popen(qurl).read()
+                resourceevaluation = json.loads(result)
+                count = len(resourceevaluation['content'])
+                for j in range(count):
+                        resourcecontent = resourceevaluation['content'][j]
+                        resourcecontent["controlName"] = evalcontent[i]["controlName"]
+                        resourcecontent["controlId"] = evalcontent[i]["controlId"]
+                        resourcecontent["remediationURL"] = remediationURL
+                        print ((json.dumps(resourcecontent)))
+        except:
+            pass
     if response['last']:
-        completeList = False
+        notCompleteList = False
     else:
         pageNum+=1
