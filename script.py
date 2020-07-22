@@ -11,7 +11,7 @@ username = "REPLACE_ME_QUALYS_USERNAME"
 password = "REPLACE_ME_QUALYS_PASSWORD"
 # use the below variable assignement if you are using os environment variables for storing the Qualys API User name and Password values
 #username = os.environ["QUALYS_API_USERNAME"]
-#password = s.environ["QUALYS_API_PASSWORD"]
+#password = os.environ["QUALYS_API_PASSWORD"]
 BASEURL = "REPLACE_ME_BASE_URL"
 pageNum = 0
 notCompleteList = True
