@@ -101,8 +101,10 @@ while not CompleteList:
     apiResponse = False
     retryCount = 0
     while not apiResponse:
+        start = time.monotonic()
         accountList = httpSession.get(URL, headers=headers, verify=True)
-        logger.debug ("\n\nStatus code {} for {}\n\n".format(accountList.status_code, URL))
+        response_time = time.monotonic() - start
+        logger.debug ("\n\nStatus code {} for {}\nResponse time: {}\n\n".format(accountList.status_code, URL, str(response_time)))
         if accountList.status_code == 200:
             apiResponse = True
         else:
@@ -124,9 +126,10 @@ while not CompleteList:
         apiResponse2 = False
         retryCount = 0
         while not apiResponse2:
-
+            start = time.monotonic()
             eval = httpSession.get(URL2, headers=headers, verify=True)
-            logger.info ("\n\nStatus code {} for {}\n\n".format(eval.status_code, URL2))
+            response_time = time.monotonic() - start
+            logger.info ("\n\nStatus code {} for {}\nResponse time: {}\n\n".format(eval.status_code, URL2, str(response_time)))
             if eval.status_code == 200:
                 apiResponse2 = True
             else:
@@ -165,8 +168,10 @@ while not CompleteList:
                         retryCount = 0
                         while not apiResponse3:
                             try:
+                                start = time.monotonic()
                                 result = httpSession.get(URL3, headers=headers, verify=True)
-                                logger.info ("\nStatus code {} for {}\n".format(result.status_code, URL3))
+                                response_time = time.monotonic() - start
+                                logger.info ("\nStatus code {} for {}\nResponse time: {}\n\n".format(result.status_code, URL3, str(response_time) ))
                             except Exception as x:
                                 logger.error("\nException Encountered\n")
                                 logger.error("\nError {} {}".format(x, str(x.__class__.__name__)))
@@ -195,32 +200,36 @@ while not CompleteList:
                         logger.debug ("\nRaw ResourceEvaluation = {}\n".format(result.text))
                         resourceevaluation = json.loads(result.text)
                         logger.debug ("\nResourceEvaluation = {}\n".format(resourceevaluation))
-                        if resourceevaluation['content']:
-                            resourceEvalList.extend(resourceevaluation['content'])
+                        if resourceevaluation['numberOfElements'] > 0:
+                            if resourceevaluation['content']:
+                                resourceEvalList.extend(resourceevaluation['content'])
 
-                        if resourceevaluation['last'] and resourceEvalList:
-                            sanityCheck = 0
-                            resourcecontent = {}
-                            logger.debug ("\nFull List of CID Evaluations = {} \n".format(str(resourceEvalList)))
-                            count = len(resourceEvalList)
-                            if count > 0:
-                                logger.info ("\n\nAccount {} - Resource CID {} Evaluations Count - {}".format(account[str(accountType[provider])],str(cid),count))
-                                for evals in resourceEvalList:
-                                    #logger.debug ("\n evals type {}\n".format(type(evals)))
-                                    resourcecontent = {}
-                                    resourcecontent.update(evals)
-                                    resourcecontent["controlName"] = i["controlName"]
-                                    resourcecontent["controlId"] = i["controlId"]
-                                    resourcecontent["remediationURL"] = remediationURL
-                                    resourcecontent["name"] = account["name"]
-                                    resourcecontent["criticality"] = criticality
-                                    print ((json.dumps(resourcecontent)))
-                                    sanityCheck+=1
-                                logger.info ("\n Number of items in the list: {} \n".format(sanityCheck))
-                                notCompleteListResources = False
+                            if resourceevaluation['last'] and resourceEvalList:
+                                sanityCheck = 0
+                                resourcecontent = {}
+                                logger.debug ("\nFull List of CID Evaluations = {} \n".format(str(resourceEvalList)))
+                                count = len(resourceEvalList)
+                                if count > 0:
+                                    logger.info ("\n\nAccount {} - Resource CID {} Evaluations Count - {}".format(account[str(accountType[provider])],str(cid),count))
+                                    for evals in resourceEvalList:
+                                        #logger.debug ("\n evals type {}\n".format(type(evals)))
+                                        resourcecontent = {}
+                                        resourcecontent.update(evals)
+                                        resourcecontent["controlName"] = i["controlName"]
+                                        resourcecontent["controlId"] = i["controlId"]
+                                        resourcecontent["remediationURL"] = remediationURL
+                                        resourcecontent["name"] = account["name"]
+                                        resourcecontent["criticality"] = criticality
+                                        print ((json.dumps(resourcecontent)))
+                                        sanityCheck+=1
+                                    logger.info ("\n Number of items in the list: {} \n".format(sanityCheck))
+                                    notCompleteListResources = False
 
+                            else:
+                                resourcePage+=1
                         else:
-                            resourcePage+=1
+                            logger.debug("No resources found for CID {}".format(str(cid)))
+                            notCompleteListResources = False
 
 
         except Exception as e:
